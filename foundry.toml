@@ -1,0 +1,22 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+
+# 重映射配置
+remappings = [
+    "openzeppelin-contracts/=lib/openzeppelin-contracts/",
+    "safe-smart-account/=lib/safe-smart-account/", 
+    "forge-std/=lib/forge-std/src/"
+]
+
+# Solc 版本
+solc_version = "0.8.24"
+
+# 编译器设置
+# optimizer = true
+# optimizer_runs = 200
+# via_ir = true
+
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
