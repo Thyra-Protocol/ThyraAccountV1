@@ -5,9 +5,9 @@ import {MerkleProof} from "openzeppelin-contracts/contracts/utils/cryptography/M
 import {LibDiamond} from "../Libraries/LibDiamond.sol";
 import {IExecutorTypes} from "../Interfaces/IExecutorTypes.sol";
 import {IAddressProviderService} from "../Interfaces/IAddressProviderService.sol";
+import {IOwnershipFacet} from "../Interfaces/IOwnershipFacet.sol";
 import {BigMathMinified} from "../Libraries/bigMathMinified.sol";
 import {ThyraRegistry} from "../ThyraRegistry.sol";
-import {ThyraDiamond} from "../ThyraDiamond.sol";
 import {IModuleManager} from "safe-smart-account/contracts/interfaces/IModuleManager.sol";
 import {Enum} from "safe-smart-account/contracts/libraries/Enum.sol";
 
@@ -386,10 +386,10 @@ contract ExecutorFacet is IExecutorTypes, IAddressProviderService {
      * @return returnData Data returned by execution
      */
     function _executeOperation(Operation memory _operation) internal returns (bytes memory returnData) {
-        // Get Safe wallet address from Diamond's public getter
+        // Get Safe wallet address via OwnershipFacet interface
         // CRITICAL: We cannot use assembly sload(0) because ReentrancyGuard's _status 
         // variable also uses slot 0, which would conflict in delegatecall context
-        address safeWallet = ThyraDiamond(payable(address(this))).safeWallet();
+        address safeWallet = IOwnershipFacet(address(this)).safeWallet();
 
         // Execute transaction through Safe as module
         // CallType already validated in _validateOperationConstraints, we only support CALL

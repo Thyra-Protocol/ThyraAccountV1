@@ -6,6 +6,7 @@ import {Create2} from "openzeppelin-contracts/contracts/utils/Create2.sol";
 import {SafeProxyFactory, SafeProxy} from "safe-smart-account/contracts/proxies/SafeProxyFactory.sol";
 import {SafeHelpers} from "./Libraries/SafeHelpers.sol";
 import {ThyraDiamond} from "./ThyraDiamond.sol";
+import {IOwnershipFacet} from "./Interfaces/IOwnershipFacet.sol";
 
 /// @title ThyraFactory
 /// @author ThyraWallet Team
@@ -109,8 +110,8 @@ contract ThyraFactory is ReentrancyGuard {
         // 2. Deploy Safe proxy with inline initialization data
         _safe = _createSafe(_setupSafeWithModule(_owners, _threshold, diamond, false, address(0)), _owners, _salt);
 
-        // 3. Initialize Diamond with Safe address
-        ThyraDiamond(payable(diamond)).setSafeWallet(_safe);
+        // 3. Initialize Diamond with factory and Safe address in one call
+        IOwnershipFacet(diamond).initialize(address(this), _safe);
 
         // 4. Emit event
         emit ThyraAccountDeployed(_safe, diamond, _owners, _threshold);
@@ -143,8 +144,8 @@ contract ThyraFactory is ReentrancyGuard {
         // 2. Deploy Safe proxy with both modules (diamond + parent safe)
         _subAccount = _createSafe(_setupSafeWithModule(_owners, _threshold, diamond, true, _parentSafe), _owners, _salt);
 
-        // 3. Initialize Diamond with Safe address
-        ThyraDiamond(payable(diamond)).setSafeWallet(_subAccount);
+        // 3. Initialize Diamond with factory and Safe address in one call
+        IOwnershipFacet(diamond).initialize(address(this), _subAccount);
 
         // 4. Emit event
         emit ThyraSubAccountDeployed(_subAccount, diamond, _parentSafe, _owners, _threshold);

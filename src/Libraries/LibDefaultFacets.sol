@@ -51,9 +51,11 @@ library LibDefaultFacets {
             _selector == 0x8da5cb5b // owner() - Most common ownership query
                 || _selector == 0xf2fde38b // transferOwnership(address)
                 || _selector == 0x7200b829 // confirmOwnershipTransfer()
-                || _selector == 0x23452b9c
+                || _selector == 0x23452b9c // cancelOwnershipTransfer()
+                || _selector == 0x485cc955 // initialize(address,address)
+                || _selector == 0x88cfce56 // safeWallet()
+                || _selector == 0xc45a0155 // factory()
         ) {
-            // cancelOwnershipTransfer()
             return DefaultFacetType.Ownership;
         }
         // DiamondCutFacet function selectors (LOWEST FREQUENCY - rare upgrades)

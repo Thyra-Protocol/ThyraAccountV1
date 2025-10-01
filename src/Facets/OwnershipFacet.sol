@@ -6,8 +6,8 @@ import {IERC173} from "../Interfaces/IERC173.sol";
 import {LibUtil} from "../Libraries/LibUtil.sol";
 
 /// @title Ownership Facet
-/// @author LI.FI (https://li.fi)
-/// @notice Manages ownership of the LiFi Diamond contract for admin purposes
+/// @author ThyraWallet Team (based on LI.FI)
+/// @notice Manages ownership of the Thyra Diamond contract and Safe wallet initialization
 /// @custom:version 1.0.0
 contract OwnershipFacet is IERC173 {
     /// Storage ///
@@ -15,7 +15,10 @@ contract OwnershipFacet is IERC173 {
 
     /// Types ///
     struct Storage {
-        address newOwner;
+        address newOwner;           // Pending ownership transfer address
+        address factory;            // Factory address that deployed this Diamond
+        address safeWallet;         // Safe wallet address that this Diamond is a module of
+        bool initialized;           // Whether Safe wallet has been initialized
     }
 
     /// Errors ///
@@ -23,6 +26,9 @@ contract OwnershipFacet is IERC173 {
     error NewOwnerMustNotBeSelf();
     error NoPendingOwnershipTransfer();
     error NotPendingOwner();
+    error OnlyFactory();
+    error AlreadyInitialized();
+    error InvalidSafeAddress();
 
     /// Events ///
     event OwnershipTransferRequested(address indexed _from, address indexed _to);
@@ -66,6 +72,46 @@ contract OwnershipFacet is IERC173 {
     function owner() external view override returns (address owner_) {
         owner_ = LibDiamond.contractOwner();
     }
+
+    /// Safe Wallet Initialization Methods ///
+
+    /// @notice Initialize Diamond with factory and Safe wallet
+    /// @dev Called by Factory after deployment. Can only be called once.
+    ///      Combines factory and Safe wallet setup in a single transaction for gas efficiency.
+    /// @param _factory Address of the Factory that deployed this Diamond
+    /// @param _safeWallet Address of the Safe wallet that this Diamond is a module of
+    function initialize(address _factory, address _safeWallet) external {
+        Storage storage s = getStorage();
+        
+        // Can only initialize once
+        if (s.initialized) revert AlreadyInitialized();
+        if (LibUtil.isZeroAddress(_factory)) revert InvalidSafeAddress();
+        if (LibUtil.isZeroAddress(_safeWallet)) revert InvalidSafeAddress();
+        
+        // Set factory address
+        s.factory = _factory;
+        
+        // Set Safe wallet
+        s.safeWallet = _safeWallet;
+        s.initialized = true;
+        
+        // Transfer ownership from Factory to Safe wallet
+        // This allows Safe (and its owners through multi-sig) to manage the Diamond
+        LibDiamond.setContractOwner(_safeWallet);
+    }
+
+    /// @notice Get the Safe wallet address
+    /// @return Safe wallet address (zero address if not initialized)
+    function safeWallet() external view returns (address) {
+        return getStorage().safeWallet;
+    }
+
+    /// @notice Get the factory address
+    /// @return Factory address that deployed this Diamond
+    function factory() external view returns (address) {
+        return getStorage().factory;
+    }
+
 
     /// Private Methods ///
 

@@ -7,6 +7,7 @@ import {DiamondCutFacet} from "../src/Facets/DiamondCutFacet.sol";
 import {DiamondLoupeFacet} from "../src/Facets/DiamondLoupeFacet.sol";
 import {ExecutorFacet} from "../src/Facets/ExecutorFacet.sol";
 import {OwnershipFacet} from "../src/Facets/OwnershipFacet.sol";
+import {IOwnershipFacet} from "../src/Interfaces/IOwnershipFacet.sol";
 import {IExecutorTypes} from "../src/Interfaces/IExecutorTypes.sol";
 
 // Safe contracts (simplified imports for testing)
@@ -111,10 +112,9 @@ contract ExecutorFacetTest is Test, IExecutorTypes {
         safeWallet =
             Safe(payable(safeFactory.createProxyWithNonce(address(safeSingleton), safeInitData, block.timestamp)));
 
-        // Link Safe to Diamond
-        vm.startPrank(diamondOwner);
-        ThyraDiamond(payable(address(diamond))).setSafeWallet(address(safeWallet));
-        vm.stopPrank();
+        // Initialize Diamond with factory and Safe wallet
+        // Since ThyraDiamond was deployed in this test contract's context, address(this) is the factory
+        IOwnershipFacet(address(diamond)).initialize(address(this), address(safeWallet));
 
         console2.log("Safe wallet deployed at:", address(safeWallet));
     }
@@ -131,7 +131,7 @@ contract ExecutorFacetTest is Test, IExecutorTypes {
 
     function test_SafeIntegration() public view {
         // Verify Diamond is linked to Safe
-        assertEq(ThyraDiamond(payable(address(diamond))).safeWallet(), address(safeWallet));
+        assertEq(IOwnershipFacet(address(diamond)).safeWallet(), address(safeWallet));
 
         // Verify Diamond is enabled as Safe module
         assertTrue(safeWallet.isModuleEnabled(address(diamond)));

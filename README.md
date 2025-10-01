@@ -1,66 +1,85 @@
-## Foundry
+# ThyraAccount
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+[![License: LGPL-3.0](https://img.shields.io/badge/License-LGPL--3.0-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
+[![Solidity: 0.8.17+](https://img.shields.io/badge/Solidity-0.8.17+-blue)](https://soliditylang.org/)
+[![Foundry](https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg)](https://getfoundry.sh/)
 
-Foundry consists of:
+ThyraAccount is a next-generation Smart Contract Account system combining Gnosis Safe security with advanced execution capabilities through the EIP-2535 Diamond Proxy pattern. It enables pre-authorized, batched transaction execution via a Merkle tree-based task system.
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+## Key Features
 
-## Documentation
+- **Merkle Tree-Based Authorization**: Cryptographically commit to operation batches with on-chain proof verification.
+- **Diamond Proxy Architecture (EIP-2535)**: Modular, upgradeable, and unlimited contract size.
+- **Gnosis Safe Integration**: Built on proven Safe v1.5+ multi-sig infrastructure.
+- **Advanced Execution Controls**: Time-bounded operations, gas price protection, and authorized executors.
 
-https://book.getfoundry.sh/
+## Architecture Overview
 
-## Usage
+```
+┌─────────────────────────────────────────────┐
+│         Safe Wallet (Multi-Sig)             │
+│              Owner & Control                │
+└────────────────────┬────────────────────────┘
+                     │
+                     ▼
+         ┌───────────────────────┐
+         │   ThyraDiamond        │
+         │   (EIP-2535 Proxy)    │
+         └───────────┬───────────┘
+                     │
+            ┌────────┴────────┐
+            │                 │
+            ▼                 ▼
+    ┌──────────────┐  ┌──────────────┐
+    │ ExecutorFacet│  │ Other Facets │
+    │  (Tasks &    │  │  (Ownership, │
+    │  Execution)  │  │   Diamond)   │
+    └──────┬───────┘  └──────────────┘
+           │
+           ▼
+    ┌──────────────┐
+    │ThyraRegistry │
+    │  (Global     │
+    │  Whitelist)  │
+    └──────────────┘
+```
+
+## Quick Start
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/Thyra-Protocol/ThyraAccountV1.git
+cd ThyraAccountV1
+
+# Install dependencies
+forge install
+```
 
 ### Build
 
-```shell
-$ forge build
+```bash
+forge build
 ```
 
 ### Test
 
-```shell
-$ forge test
+```bash
+# Run all tests
+forge test
+
+# Run with gas report
+forge test --gas-report
 ```
 
-### Format
+## Documentation
 
-```shell
-$ forge fmt
-```
+For more detailed information, please refer to the `docs/` directory:
+- 📚 **[Introduction](./docs/Introduction.md)**
+- 🏗️ **[Architecture](./docs/Architecture.md)**
+- ⚙️ **[Core Contracts](./docs/Core.md)**
 
-### Gas Snapshots
+## License
 
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+This project is licensed under the LGPL-3.0 License.

@@ -2,7 +2,6 @@
 pragma solidity ^0.8.17;
 
 import {LibDiamond} from "./Libraries/LibDiamond.sol";
-import {IDiamondCut} from "./Interfaces/IDiamondCut.sol";
 import {LibDefaultFacets} from "./Libraries/LibDefaultFacets.sol";
 // solhint-disable-next-line no-unused-import
 import {LibUtil} from "./Libraries/LibUtil.sol";
@@ -12,25 +11,11 @@ import {LibUtil} from "./Libraries/LibUtil.sol";
 /// @notice Base EIP-2535 Diamond Proxy Contract for Thyra Account.
 /// @custom:version 1.0.0
 contract ThyraDiamond {
-    /// @notice Safe wallet address that this Diamond is a module of
-    address public safeWallet;
-
-    /// @notice Factory address that deployed this Diamond (immutable for security)
-    address public immutable FACTORY;
-
     /// @notice Default facet addresses using immutable for gas-optimized fast path
     address private immutable I_DIAMOND_CUT_FACET;
     address private immutable I_DIAMOND_LOUPE_FACET;
     address private immutable I_EXECUTOR_FACET;
     address private immutable I_OWNERSHIP_FACET;
-
-    /// @notice Whether the Safe wallet address has been initialized
-    bool private initialized;
-
-    /// @notice Errors
-    error OnlyFactory();
-    error AlreadyInitialized();
-    error InvalidSafeAddress();
 
     constructor(
         address _contractOwner,
@@ -39,7 +24,6 @@ contract ThyraDiamond {
         address _executorFacet,
         address _ownershipFacet
     ) payable {
-        FACTORY = msg.sender;
         LibDiamond.setContractOwner(_contractOwner);
 
         // Initialize immutable default facet addresses for fast path optimization
@@ -47,17 +31,9 @@ contract ThyraDiamond {
         I_DIAMOND_LOUPE_FACET = _diamondLoupeFacet;
         I_EXECUTOR_FACET = _executorFacet;
         I_OWNERSHIP_FACET = _ownershipFacet;
-
-        // Add the diamondCut external function from the diamondCutFacet
-        LibDiamond.FacetCut[] memory cut = new LibDiamond.FacetCut[](1);
-        bytes4[] memory functionSelectors = new bytes4[](1);
-        functionSelectors[0] = IDiamondCut.diamondCut.selector;
-        cut[0] = LibDiamond.FacetCut({
-            facetAddress: _diamondCutFacet,
-            action: LibDiamond.FacetCutAction.Add,
-            functionSelectors: functionSelectors
-        });
-        LibDiamond.diamondCut(cut, address(0), "");
+        
+        // Note: Factory and Safe wallet initialization moved to OwnershipFacet.initialize()
+        // called by Factory after deployment to avoid constructor call issues
     }
 
     // Two-tiered lookup system: fast path + slow path fallback
@@ -111,25 +87,6 @@ contract ThyraDiamond {
             case 0 { revert(0, returndatasize()) }
             default { return(0, returndatasize()) }
         }
-    }
-
-    /**
-     * @notice Set the Safe wallet address that this Diamond is a module of
-     * @dev Only the factory can call this function, and only once
-     *      Automatically transfers Diamond ownership to the Safe wallet
-     * @param _safeWallet Address of the Safe wallet
-     */
-    function setSafeWallet(address _safeWallet) external {
-        if (msg.sender != FACTORY) revert OnlyFactory();
-        if (initialized) revert AlreadyInitialized();
-        if (_safeWallet == address(0)) revert InvalidSafeAddress();
-
-        safeWallet = _safeWallet;
-        initialized = true;
-        
-        // Transfer ownership from Factory to Safe wallet
-        // This allows Safe (and its owners through multi-sig) to manage the Diamond
-        LibDiamond.setContractOwner(_safeWallet);
     }
 
     // Able to receive ether
